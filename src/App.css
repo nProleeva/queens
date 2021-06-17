@@ -1,0 +1,21 @@
+body {
+  text-align: center;
+}
+#root > * {
+  padding: 0.5rem;
+}
+.count {
+  text-align: center;
+}
+form > * {
+  margin: 0.5rem;
+}
+form input[type="text"] {
+  width: 20px;
+}
+form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: -0.5rem;
+}
