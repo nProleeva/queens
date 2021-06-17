@@ -19,7 +19,7 @@ function App() {
     const [valueInput, setInput] = useState<string>("8");
     const form = useRef<HTMLFormElement>(null);
     const objArray = useRef<obj<Array<string>>>({});
-    const [count, setCount] = useState<number|string>("");
+    const [count, setCount] = useState<number|string>();
 
     function download(data:string, filename:string, type:string) {
         let file:Blob = new Blob([data], {type: type});
@@ -36,59 +36,55 @@ function App() {
     }
 
     async function recursive() {
-        let cells:Array<string> = Object.keys(objArray.current),
-            indexCell:number = 0,
-            items:Array<string> = objArray.current[cells[indexCell]],
-            tt:Array<string> = [cells[indexCell]],
-            returnArray:Array<Array<string>> = [],
-            objArrayFlag:obj<Array<boolean>> = {},
-            result:boolean = false,
-            promise = new Promise<Array<Array<string>>>((resolve) => {
-          Object.entries(objArray.current).forEach(([key,value]:[string,Array<string>])=>objArrayFlag[key] = new Array<boolean>(value.length).fill(false));
-          function pushCell(varTt:Array<string>,item:string):void {
-              varTt.forEach((el:string)=>{
-                  objArrayFlag[el][objArray.current[el].indexOf(item)] = true;
-                  objArrayFlag[item][objArray.current[item].indexOf(el)] = true;
-              });
-          }
-          function funcReturn(varItems:Array<string> = items,varTt:Array<string> = tt.concat()):void {
-              if(cells.length !== indexCell) {
-                  varItems.forEach((item:string)=>{
-                      let newItems = objArray.current[item].filter((el:string,index:number)=>varItems.includes(el));
-                      if((varTt.length + newItems.length + 1 - n) >= 0 && varTt.some((el:string)=>!objArrayFlag[el][objArray.current[el].indexOf(item)])) {
-                          if(varTt.length < 2)
-                              pushCell(varTt, item);
-                          varTt.push(item);
-                          if (newItems.length) {
-                              funcReturn(newItems, varTt);
-                          } else if (varTt.length === n) {
-                              returnArray.push(varTt.concat());
-                          }
-                          varTt.pop();
-                      }
-                  })
-                  if(varTt.length===1) {
-                      indexCell++;
-                      if(indexCell!==cells.length) {
-                          items = objArray.current[cells[indexCell]];
-                          tt = [cells[indexCell]];
-                      }
-                      else {
-                          items = [];
-                          tt = [];
-                      }
-                      funcReturn(items, tt);
-                  }
-              }
-              else {
-                  result = true;
-                  return;
-              }
+        let promise = new Promise<Array<Array<string>>>((resolve) => {
+            let cells:Array<string> = Object.keys(objArray.current),
+                indexCell:number = 0,
+                returnArray:Array<Array<string>> = [],
+                objArrayFlag:obj<Array<boolean>> = {},
+                result:boolean = false;
+            Object.entries(objArray.current).forEach(([key,value]:[string,Array<string>])=>objArrayFlag[key] = new Array<boolean>(value.length).fill(false));
+            function pushCell(intermediateArray:Array<string>,item:string):void {
+                intermediateArray.forEach((el:string)=>{
+                    objArrayFlag[el][objArray.current[el].indexOf(item)] = true;
+                    objArrayFlag[item][objArray.current[item].indexOf(el)] = true;
+                });
+            }
+            function funcReturn(varItems:Array<string> = objArray.current[cells[indexCell]],varIntermediate:Array<string> = [cells[indexCell]]):void {
+                if(cells.length !== indexCell) {
+                    varItems.forEach((item:string)=>{
+                        let newItems = objArray.current[item].filter((el:string,index:number)=>varItems.includes(el));
+                        if((varIntermediate.length + newItems.length + 1 - n) >= 0 && varIntermediate.some((el:string)=>!objArrayFlag[el][objArray.current[el].indexOf(item)])) {
+                            if(varIntermediate.length < 2) pushCell(varIntermediate, item);
+                            varIntermediate.push(item);
+                            if (newItems.length) funcReturn(newItems, varIntermediate);
+                            else if (varIntermediate.length === n) returnArray.push(varIntermediate.concat());
+                            varIntermediate.pop();
+                        }
+                    })
+                    if(varIntermediate.length===1) {
+                        indexCell++;
+                        let items:Array<string>,
+                            intermediateArray:Array<string>;
+                        if(indexCell!==cells.length) {
+                            items = objArray.current[cells[indexCell]];
+                            intermediateArray = [cells[indexCell]];
+                        }
+                        else {
+                            items = [];
+                            intermediateArray = [];
+                        }
+                        funcReturn(items, intermediateArray);
+                    }
+                }
+                else {
+                    result = true;
+                    return;
+                }
 
-              if(result) return;
-          }
-          funcReturn();
-          resolve(returnArray);
+                if(result) return;
+            }
+            funcReturn();
+            resolve(returnArray);
         });
         return promise;
     }
@@ -144,8 +140,8 @@ function App() {
             <h3>Задача о Ферзях</h3>
             <form onSubmit={onSubmit} ref={form}>
                 <label htmlFor="n">n =</label>
-                <input type="text" value={valueInput} name="n" onChange={handleChange} id="n"/>
-                <input type="submit" value={"Найти"}/>
+                <input type="text" value={valueInput} name="n" onChange={handleChange} id="n" disabled={typeof count==="string"?true:false}/>
+                <input type="submit" value={"Найти"} disabled={typeof count==="string"?true:false}/>
             </form>
             <div className="count">
                 {count}
