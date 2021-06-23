@@ -30,6 +30,8 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
                     }
                 })
                 if(varIntermediate.length===1) {
+                    if(n===1)
+                        returnArray.push(varIntermediate.concat());
                     indexCell++;
                     let items:Array<string>,
                         intermediateArray:Array<string>;
