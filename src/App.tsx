@@ -1,4 +1,5 @@
 import React, {FormEvent, useEffect, useRef, useState} from 'react';
+import worker_script from "./worker";
 import './App.css';
 
 interface obj<T> {
@@ -20,8 +21,9 @@ function App() {
     const form = useRef<HTMLFormElement>(null);
     const objArray = useRef<obj<Array<string>>>({});
     const [count, setCount] = useState<number|string>();
+    const myWorker = useRef<Worker>();
 
-    function download(data:string, filename:string, type:string) {
+    function download(data:string, filename:string, type:string):void {
         let file:Blob = new Blob([data], {type: type});
         if (window.navigator.msSaveOrOpenBlob) // IE10+
             window.navigator.msSaveOrOpenBlob(file, filename);
@@ -35,59 +37,18 @@ function App() {
         }
     }
 
-    async function recursive() {
-        let promise = new Promise<Array<Array<string>>>((resolve) => {
-            let cells:Array<string> = Object.keys(objArray.current),
-                indexCell:number = 0,
-                returnArray:Array<Array<string>> = [],
-                objArrayFlag:obj<Array<boolean>> = {},
-                result:boolean = false;
-            Object.entries(objArray.current).forEach(([key,value]:[string,Array<string>])=>objArrayFlag[key] = new Array<boolean>(value.length).fill(false));
-            function pushCell(intermediateArray:Array<string>,item:string):void {
-                intermediateArray.forEach((el:string)=>{
-                    objArrayFlag[el][objArray.current[el].indexOf(item)] = true;
-                    objArrayFlag[item][objArray.current[item].indexOf(el)] = true;
-                });
-            }
-            function funcReturn(varItems:Array<string> = objArray.current[cells[indexCell]],varIntermediate:Array<string> = [cells[indexCell]]):void {
-                if(cells.length !== indexCell) {
-                    varItems.forEach((item:string)=>{
-                        let newItems = objArray.current[item].filter((el:string,index:number)=>varItems.includes(el));
-                        if((varIntermediate.length + newItems.length + 1 - n) >= 0 && varIntermediate.some((el:string)=>!objArrayFlag[el][objArray.current[el].indexOf(item)])) {
-                            if(varIntermediate.length < 2) pushCell(varIntermediate, item);
-                            varIntermediate.push(item);
-                            if (newItems.length) funcReturn(newItems, varIntermediate);
-                            else if (varIntermediate.length === n) returnArray.push(varIntermediate.concat());
-                            varIntermediate.pop();
-                        }
-                    })
-                    if(varIntermediate.length===1) {
-                        indexCell++;
-                        let items:Array<string>,
-                            intermediateArray:Array<string>;
-                        if(indexCell!==cells.length) {
-                            items = objArray.current[cells[indexCell]];
-                            intermediateArray = [cells[indexCell]];
-                        }
-                        else {
-                            items = [];
-                            intermediateArray = [];
-                        }
-                        funcReturn(items, intermediateArray);
-                    }
-                }
-                else {
-                    result = true;
-                    return;
-                }
-
-                if(result) return;
-            }
-            funcReturn();
-            resolve(returnArray);
-        });
-        return promise;
+    function onmessage(e:MessageEvent):void {
+        console.log(n);
+        if(e.data.length) download(e.data.join('\n'), `queens${n}.txt`, "text/html");
+        setCount(e.data.length);
     }
+
+    useEffect(()=>{
+        if (window.Worker && !myWorker.current) {
+            myWorker.current = new Worker(worker_script);
+            myWorker.current.addEventListener("message", onmessage, false);
+        }
+    },[])
 
     useEffect(()=>{
         if(n) {
@@ -110,20 +71,7 @@ function App() {
                     }
                 })
             })
-            let boolArray: Array<string> = [],
-                time:number = (+ Date.now());
-            recursive().then((locatedQueens: Array<Array<string>>) => {
-                for (let locatedQueen of locatedQueens) {
-                    let newArray:string = array?.map((elArray: Array<string>) => {
-                        return elArray.map<string>((str: string) => locatedQueen.includes(str)?String.fromCharCode(9819):".").join(" ")
-                    }).join('\n');
-                    if (!boolArray.includes(newArray))
-                        boolArray.push(newArray);
-                }
-                console.log(`n=${n}, ${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
-                if(boolArray.length) download(boolArray.join('\n'), `queens${n}.txt`, "text/html");
-                setCount(boolArray.length);
-            });
+            myWorker.current?.postMessage([objArray.current,array]);
         }
     },[n])
     function onSubmit(event:FormEvent):void {
