@@ -17,7 +17,7 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
                 objArrayFlag[item][objArray[item].indexOf(el)] = true;
             });
         }
-        function funcReturn(varItems:Array<string> = objArray[cells[indexCell]],varIntermediate:Array<string> = [cells[indexCell]]):void {
+        let funcReturn:(varItems?:Array<string>,varIntermediate?:Array<string>)=>void = function (varItems:Array<string> = objArray[cells[indexCell]],varIntermediate:Array<string> = [cells[indexCell]]):void {
             if(cells.length !== indexCell) {
                 varItems.forEach((item:string)=>{
                     let newItems = objArray[item].filter((el:string,index:number)=>varItems.includes(el));
