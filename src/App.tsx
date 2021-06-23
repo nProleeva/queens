@@ -37,16 +37,13 @@ function App() {
         }
     }
 
-    function onmessage(e:MessageEvent):void {
-        console.log(n);
-        if(e.data.length) download(e.data.join('\n'), `queens${n}.txt`, "text/html");
-        setCount(e.data.length);
-    }
-
     useEffect(()=>{
         if (window.Worker && !myWorker.current) {
             myWorker.current = new Worker(worker_script);
-            myWorker.current.addEventListener("message", onmessage, false);
+            myWorker.current.addEventListener("message", (e:MessageEvent):void => {
+                if(e.data.length) download(e.data.join('\n'), `queens.txt`, "text/html");
+                setCount(e.data.length);
+            }, false);
         }
     },[])
 
