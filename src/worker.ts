@@ -64,7 +64,7 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
         if (!boolArray.includes(newArray))
             boolArray.push(newArray);
     });
-    window.self.console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
+    if(e.ports) console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
     e.ports[0].postMessage(boolArray);
 }
 
