@@ -1,6 +1,4 @@
-interface obj<T> {
-    [key: string]: T
-}
+import type {obj} from "./App";
 
 let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
     let recursive:(objArray:obj<Array<string>>)=>Array<Array<string>> = function (objArray:obj<Array<string>>) {
@@ -30,6 +28,8 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
                     }
                 })
                 if(varIntermediate.length===1) {
+                    if(n===1)
+                        returnArray.push(varIntermediate.concat());
                     indexCell++;
                     let items:Array<string>,
                         intermediateArray:Array<string>;
@@ -64,12 +64,12 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
         if (!boolArray.includes(newArray))
             boolArray.push(newArray);
     });
-    console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
+    window.self.console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
     e.ports[0].postMessage(boolArray);
 }
 
 function fn2workerURL(fn:(e:MessageEvent)=>void) {
-    var blob = new Blob(['onmessage = '+fn.toString().replace(/e\.ports\[0\]\./g,"")], {type: 'application/javascript'})
+    let blob:Blob = new Blob([`onmessage = ${fn.toString().replace(/e\.ports\[0\]\.|window\./g,"")}`], {type: 'application/javascript'})
     return URL.createObjectURL(blob)
 }
 export default fn2workerURL(onmessage);

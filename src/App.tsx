@@ -2,7 +2,7 @@ import React, {FormEvent, useEffect, useRef, useState} from 'react';
 import worker_script from "./worker";
 import './App.css';
 
-interface obj<T> {
+export interface obj<T> {
     [key: string]: T
 }
 interface FormElements extends HTMLCollection {
@@ -16,7 +16,7 @@ declare var Blob: {
 
 
 function App() {
-    const [n, setN] = useState<number>(0);
+    const n = useRef<number>(0);
     const [valueInput, setInput] = useState<string>("8");
     const form = useRef<HTMLFormElement>(null);
     const objArray = useRef<obj<Array<string>>>({});
@@ -41,27 +41,28 @@ function App() {
         if (window.Worker && !myWorker.current) {
             myWorker.current = new Worker(worker_script);
             myWorker.current.addEventListener("message", (e:MessageEvent):void => {
-                if(e.data.length) download(e.data.join('\n'), `queens.txt`, "text/html");
+                if(e.data.length) download(e.data.join('\n'), `queens${n.current}.txt`, "text/html");
+                n.current = 0;
                 setCount(e.data.length);
             }, false);
         }
     },[])
 
     useEffect(()=>{
-        if(n) {
+        if(n.current) {
             let array: Array<Array<string>> = [[]];
             objArray.current = {};
-            for (let i = 0; i < n; i++) {
+            for (let i = 0; i < n.current; i++) {
                 array.push([]);
-                for (let j = 0; j < n; j++)
+                for (let j = 0; j < n.current; j++)
                     array[i].push(`${i}${j}`);
             }
             array.forEach((el1: Array<string>, index1: number) => {
                 el1.forEach((el2: string, index2: number) => {
                     objArray.current[el2] = [];
-                    for (let i = 0; i < n; i++) {
+                    for (let i = 0; i < n.current; i++) {
                         if (i === index1) continue;
-                        for (let j = 0; j < n; j++) {
+                        for (let j = 0; j < n.current; j++) {
                             if (j === index2 || Math.abs(j - index2) === Math.abs(i - index1)) continue;
                             objArray.current[el2].push(`${i}${j}`);
                         }
@@ -70,9 +71,9 @@ function App() {
             })
             myWorker.current?.postMessage([objArray.current,array]);
         }
-    },[n])
+    },[count])
     function onSubmit(event:FormEvent):void {
-        setN(parseInt((form.current?.elements as FormElements).n.value));
+        n.current = parseInt((form.current?.elements as FormElements).n.value);
         setCount("Загрузка...");
         event.preventDefault();
         event.stopPropagation();
