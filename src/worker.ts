@@ -10,7 +10,7 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
             returnArray:Array<Array<string>> = [],
             objArrayFlag:obj<Array<boolean>> = {},
             result:boolean = false;
-        Object.entries(objArray).forEach(([key,value]:[string,Array<string>])=>objArrayFlag[key] = new Array<boolean>(value.length).fill(false));
+        Object.entries(objArray).forEach((data:[string,Array<string>]):void=>{objArrayFlag[data[0]] = new Array<boolean>(data[1].length).fill(false);});
         function pushCell(intermediateArray:Array<string>,item:string):void {
             intermediateArray.forEach((el:string)=>{
                 objArrayFlag[el][objArray[el].indexOf(item)] = true;
@@ -57,13 +57,13 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
     let boolArray: Array<string> = [],
         time:number = (+ Date.now());
     const locatedQueens:Array<Array<string>> = recursive(e.data[0]);
-    for (let locatedQueen of locatedQueens) {
+    locatedQueens.forEach((locatedQueen:Array<string>)=>{
         let newArray:string = e.data[1]?.map((elArray: Array<string>) => {
             return elArray.map<string>((str: string) => locatedQueen.includes(str)?String.fromCharCode(9819):".").join(" ")
         }).join('\n');
         if (!boolArray.includes(newArray))
             boolArray.push(newArray);
-    }
+    });
     console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
     e.ports[0].postMessage(boolArray);
 }
