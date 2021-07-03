@@ -1,6 +1,8 @@
 import type {obj} from "./App";
 
-let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
+//global.window.URL.createObjectURL = jest.fn();
+
+export let onmessage:(e:MessageEvent<[obj<Array<string>>,Array<Array<string>>,(array:Array<string>)=>void ]>)=>void = function(e:MessageEvent<[obj<Array<string>>,Array<Array<string>>, (array:Array<string>)=>void]>) {
     let recursive:(objArray:obj<Array<string>>)=>Array<Array<string>> = function (objArray:obj<Array<string>>) {
         let cells:Array<string> = Object.keys(objArray),
             n:number = Math.sqrt(cells.length),
@@ -54,21 +56,21 @@ let onmessage:(e:MessageEvent)=>void = function(e:MessageEvent) {
         funcReturn();
         return returnArray;
     }
-    let boolArray: Array<string> = [],
-        time:number = (+ Date.now());
+    let boolArray: Array<string> = [];
     const locatedQueens:Array<Array<string>> = recursive(e.data[0]);
     locatedQueens.forEach((locatedQueen:Array<string>)=>{
-        let newArray:string = e.data[1]?.map((elArray: Array<string>) => {
+        let newArray:string = e.data[1].map((elArray: Array<string>) => {
             return elArray.map<string>((str: string) => locatedQueen.includes(str)?String.fromCharCode(9819):".").join(" ")
         }).join('\n');
         if (!boolArray.includes(newArray))
             boolArray.push(newArray);
     });
-    console.log(`${(+ Date.now() - time)}ms - время нахождения всевозможных значений`);
-    e.ports[0].postMessage(boolArray);
+    if(e.ports) e.ports[0].postMessage(boolArray);
+    if(e.data[2]) e.data[2](boolArray);
+    return;
 }
 
-function fn2workerURL(fn:(e:MessageEvent)=>void) {
+function fn2workerURL(fn:(e:MessageEvent<[obj<Array<string>>,Array<Array<string>>,(array:Array<string>)=>void]>)=>void) {
     let blob:Blob = new Blob([`onmessage = ${fn.toString().replace(/e\.ports\[0\]\.|window\./g,"")}`], {type: 'application/javascript'})
     return URL.createObjectURL(blob)
 }

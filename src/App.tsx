@@ -1,6 +1,12 @@
 import React, {FormEvent, useEffect, useRef, useState} from 'react';
-import worker_script from "./worker";
+import worker_script, {onmessage} from "./worker";
 import './App.css';
+
+export let loading:string = "Загрузка...";
+export let outputError:string = 'доски NaN * NaN не существует'
+
+//global.window.URL.createObjectURL = jest.fn();
+//global.window.URL.revokeObjectURL = jest.fn();
 
 export interface obj<T> {
     [key: string]: T
@@ -17,9 +23,9 @@ declare var Blob: {
 
 function App() {
     const n = useRef<number>(0);
+    const time = useRef<number>(0);
     const [valueInput, setInput] = useState<string>("8");
     const form = useRef<HTMLFormElement>(null);
-    const objArray = useRef<obj<Array<string>>>({});
     const [count, setCount] = useState<number|string>();
     const myWorker = useRef<Worker>();
 
@@ -28,7 +34,7 @@ function App() {
         if (window.navigator.msSaveOrOpenBlob) // IE10+
             window.navigator.msSaveOrOpenBlob(file, filename);
         else { // Others
-            var a = document.createElement("a"),
+            let a = document.createElement("a"),
                 url = URL.createObjectURL(file);
             a.href = url;
             a.download = filename;
@@ -37,21 +43,25 @@ function App() {
         }
     }
 
+    function onmessageWorker(e:MessageEvent<Array<string>>):void {
+        console.log(`n = ${n.current}, ${(+ Date.now() - time.current)}ms - время нахождения всевозможных значений`);
+        if(e.data.length) download(e.data.join('\n'), `queens${n.current}.txt`, "text/html");
+        n.current = 0;
+        setCount(e.data.length);
+    }
+
     useEffect(()=>{
         if (window.Worker && !myWorker.current) {
             myWorker.current = new Worker(worker_script);
-            myWorker.current.addEventListener("message", (e:MessageEvent):void => {
-                if(e.data.length) download(e.data.join('\n'), `queens${n.current}.txt`, "text/html");
-                n.current = 0;
-                setCount(e.data.length);
-            }, false);
+            myWorker.current.addEventListener("message", onmessageWorker, false);
         }
     },[])
 
     useEffect(()=>{
-        if(n.current) {
-            let array: Array<Array<string>> = [[]];
-            objArray.current = {};
+        if (n.current) {
+            time.current = (+ Date.now());
+            let array: Array<Array<string>> = [],
+                objArray: obj<Array<string>> = {};
             for (let i = 0; i < n.current; i++) {
                 array.push([]);
                 for (let j = 0; j < n.current; j++)
@@ -59,22 +69,29 @@ function App() {
             }
             array.forEach((el1: Array<string>, index1: number) => {
                 el1.forEach((el2: string, index2: number) => {
-                    objArray.current[el2] = [];
+                    objArray[el2] = [];
                     for (let i = 0; i < n.current; i++) {
                         if (i === index1) continue;
                         for (let j = 0; j < n.current; j++) {
                             if (j === index2 || Math.abs(j - index2) === Math.abs(i - index1)) continue;
-                            objArray.current[el2].push(`${i}${j}`);
+                            objArray[el2].push(`${i}${j}`);
                         }
                     }
                 })
             })
-            myWorker.current?.postMessage([objArray.current,array]);
+            if (myWorker.current) myWorker.current.postMessage([objArray,array]);
+            else {
+                let e:{data:[obj<Array<string>>,Array<Array<string>>,(array:Array<string>)=>void]} = {data:[objArray,array,function(array:Array<string>):void {
+                    onmessageWorker({data:array} as MessageEvent<Array<string>>)
+                }]};
+                onmessage(e as MessageEvent<[obj<Array<string>>,Array<Array<string>>,(array:Array<string>)=>void]>);
+            }
         }
+        else if (count === loading) setCount(outputError);
     },[count])
     function onSubmit(event:FormEvent):void {
         n.current = parseInt((form.current?.elements as FormElements).n.value);
-        setCount("Загрузка...");
+        setCount(loading);
         event.preventDefault();
         event.stopPropagation();
     }
@@ -86,10 +103,10 @@ function App() {
             <h3>Задача о Ферзях</h3>
             <form onSubmit={onSubmit} ref={form}>
                 <label htmlFor="n">n =</label>
-                <input type="text" value={valueInput} name="n" onChange={handleChange} id="n" disabled={typeof count==="string"?true:false}/>
-                <input type="submit" value={"Найти"} disabled={typeof count==="string"?true:false}/>
+                <input type="text" value={valueInput} name="n" onChange={handleChange} id="n" disabled={count===loading?true:false}/>
+                <input type="submit" value={"Найти"} disabled={count===loading?true:false}/>
             </form>
-            <div className="count">
+            <div className="count" data-testid="count-element">
                 {count}
             </div>
         </React.Fragment>
