@@ -5,8 +5,8 @@ import './App.css';
 export let loading:string = "Загрузка...";
 export let outputError:string = 'доски NaN * NaN не существует'
 
-//global.window.URL.createObjectURL = jest.fn();
-//global.window.URL.revokeObjectURL = jest.fn();
+global.window.URL.createObjectURL = jest.fn();
+global.window.URL.revokeObjectURL = jest.fn();
 
 export interface obj<T> {
     [key: string]: T

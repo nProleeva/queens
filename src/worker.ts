@@ -1,6 +1,6 @@
 import type {obj} from "./App";
 
-//global.window.URL.createObjectURL = jest.fn();
+global.window.URL.createObjectURL = jest.fn();
 
 export let onmessage:(e:MessageEvent<[obj<Array<string>>,Array<Array<string>>,(array:Array<string>)=>void ]>)=>void = function(e:MessageEvent<[obj<Array<string>>,Array<Array<string>>, (array:Array<string>)=>void]>) {
     let recursive:(objArray:obj<Array<string>>)=>Array<Array<string>> = function (objArray:obj<Array<string>>) {
